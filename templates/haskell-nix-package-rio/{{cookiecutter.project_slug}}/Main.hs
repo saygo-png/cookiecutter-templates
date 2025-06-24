@@ -1,18 +1,16 @@
-import RIO
+import Flow
 import Options.Applicative
+import RIO
 import System.Directory
+import System.FilePath
 import System.Posix.Files
-import System.Process (callProcess)
 import Text.Printf (printf)
 
-data Sample = Sample
-  { path :: FilePath,
-    write :: Bool
-  }
+data Options = Options {path :: FilePath, write :: Bool, recurse :: Bool}
 
-sample :: Parser Sample
-sample =
-  Sample
+optionsParser :: Parser Options
+optionsParser =
+  Options
     <$> argument
       str
       ( help "Target for the greeting"
@@ -22,27 +20,80 @@ sample =
     <*> switch
       ( long "write"
           <> short 'w'
-          <> help "Give write permissions to the resulting file"
+          <> help "Give owner write permissions to the resulting file"
+      )
+    <*> switch
+      ( long "recursive"
+          <> short 'r'
+          <> help "Convert symlinks in a directory recursively"
       )
 
-main :: IO ()
-main = convertlinkAndWrite =<< execParser opts
-  where
-    opts =
-      info
-        (sample <**> helper)
-        ( fullDesc
-            <> progDesc "Convert a symlink to the file its pointing to"
-        )
+parserInfo :: ParserInfo Options
+parserInfo = info (helper <*> optionsParser) (progDesc "Convert a symlink to the file its pointing to")
 
-convertlinkAndWrite :: Sample -> IO ()
-convertlinkAndWrite (Sample filepath giveWrite) = do
-  pathIsSymbolicLink filepath >>= \case
-    True -> do
-      fileFromSymlink <- readSymbolicLink filepath
-      _ <- callProcess "cp" ["--remove-destination", fileFromSymlink, filepath]
-      printf "Converted symlink %s\n" filepath
-      when giveWrite $ do
-        _ <- callProcess "chmod" ["+w", filepath]
-        pure ()
-    False -> printf "convertlink: cannot convert %s: Not a symlink\n" filepath
+main :: IO ()
+main = convertlinksAndWrite =<< execParser parserInfo
+
+convertlinksAndWrite :: Options -> IO ()
+convertlinksAndWrite opts = do
+  let filepath = path opts
+      giveWrite = write opts
+      recursive = recurse opts
+  filestatus <- getFileStatus filepath
+
+  case isDirectory filestatus of
+    True
+      | not recursive -> printf "convertlink: -r not specified; omitting directory %s\n" filepath
+      | otherwise -> do
+          symlinks <- findSymlinksRecursively filepath
+          if symlinks /= []
+            then mapM_ (`convertLinkAndWrite` giveWrite) symlinks
+            else printf "convertlink: directory doesn't contain symlinks %s\n" filepath
+    False -> do
+      isSymlink <- pathIsSymbolicLink filepath
+      if isSymlink
+        then convertLinkAndWrite filepath giveWrite
+        else printf "convertlink: cannot convert %s: Not a symlink\n" filepath
+
+convertLinkAndWrite :: FilePath -> Bool -> IO ()
+convertLinkAndWrite filepath write = do
+  convertSymlinkPreservePerms filepath
+  printf "Converted symlink %s\n" filepath
+  when write <| do
+    addOwnerWritePermission filepath
+
+addOwnerWritePermission :: FilePath -> IO ()
+addOwnerWritePermission filepath = do
+  currentMode <- fileMode <$> getFileStatus filepath
+  currentMode `unionFileModes` ownerWriteMode |> setFileMode filepath
+
+convertSymlinkPreservePerms :: FilePath -> IO ()
+convertSymlinkPreservePerms symlink = do
+  fileFromSymlink <- readSymbolicLink symlink
+  targetMode <- fileMode <$> getFileStatus fileFromSymlink
+
+  removeLink symlink
+  copyFile fileFromSymlink symlink
+  setFileMode symlink targetMode
+
+findSymlinksRecursively :: FilePath -> IO [FilePath]
+findSymlinksRecursively dir = do
+  result <- try <| listDirectory dir
+  case result of
+    Left (_ :: SomeException) -> return []
+    Right entries -> do
+      let fullPaths = map (dir </>) entries
+      symlinkResults <- mapM checkAndRecurse fullPaths
+      return <| concat symlinkResults
+  where
+    checkAndRecurse :: FilePath -> IO [FilePath]
+    checkAndRecurse path = do
+      isSymlink <- pathIsSymbolicLink path
+      if isSymlink
+        then return [path]
+        else do
+          isDir <- doesDirectoryExist path
+          if isDir
+            then findSymlinksRecursively path
+            else return []
+
