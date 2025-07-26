@@ -1,0 +1,6 @@
+### Nix ###
+result
+
+### Haskell ###
+dist-*
+cabal.project.local
