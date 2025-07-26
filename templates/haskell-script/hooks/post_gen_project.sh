@@ -6,6 +6,6 @@
 chmod +w .gitignore
 chmod +w default.nix
 chmod +w cabal.project
-chmod +w LICENSE
+chmod +w Main.hs
 chmod +w '{{cookiecutter.binaryName}}.cabal'
 

@@ -1,6 +1,5 @@
 import Flow
 import Options.Applicative
-import RIO
 import System.Directory
 import System.FilePath
 import System.Posix.Files

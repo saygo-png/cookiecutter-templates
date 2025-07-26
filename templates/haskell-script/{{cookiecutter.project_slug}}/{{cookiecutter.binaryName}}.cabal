@@ -12,4 +12,3 @@ executable {{cookiecutter.binaryName}}
   import:         common-options
   hs-source-dirs: .
   main-is:        Main.hs
-  build-depends: {{cookiecutter.binaryName}}
