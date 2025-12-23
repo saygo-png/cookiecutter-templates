@@ -1,7 +1,0 @@
-{
-  "project_slug": "myproject",
-  "binaryName": "foo",
-  "_copy_without_render": [
-    "*.hs"
-  ]
-}
