@@ -38,5 +38,22 @@
     });
 
     formatter = eachSystem (system: pkgs: (treefmt-nix.lib.evalModule pkgs ./treefmt.nix).${system}.config.build.wrapper);
+
+    devShells = eachSystem (_system: pkgs: {
+      default = pkgs.mkShell {
+        packages = let
+          ghcPackages = pkgs.haskell.packages.ghc912;
+        in [
+          pkgs.pkg-config
+          pkgs.libsodium
+          pkgs.zlib
+          ghcPackages.ghc
+          ghcPackages.haskell-language-server
+        ];
+        shellHook = ''
+          export CABAL_DIR="$XDG_CONFIG_HOME/cabal"
+        '';
+      };
+    });
   };
 }

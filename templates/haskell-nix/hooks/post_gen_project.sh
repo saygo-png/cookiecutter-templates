@@ -6,7 +6,6 @@
 chmod +w Main.hs
 chmod +w flake.nix
 chmod +w package.nix
-chmod +w shell.nix
 chmod +w systems.nix
 chmod +w treefmt.nix
 chmod +w '{{cookiecutter.binaryName}}.cabal'
