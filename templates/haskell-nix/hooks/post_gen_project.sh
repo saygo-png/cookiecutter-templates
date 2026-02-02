@@ -5,6 +5,8 @@
 
 chmod +w Main.hs
 chmod +w flake.nix
+chmod +w .envrc
+chmod +w .gitignore
 chmod +w package.nix
 chmod +w systems.nix
 chmod +w treefmt.nix
