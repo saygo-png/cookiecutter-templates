@@ -11,7 +11,7 @@
       };
     };
     systems = {
-      url = "path:./systems.nix";
+      url = "path:./nix/systems.nix";
       flake = false;
     };
   };
@@ -21,34 +21,31 @@
     systems,
     niceHaskell,
     treefmt-nix,
-    self,
     ...
   }: let
     pkgsFor = nixpkgs.lib.genAttrs (import systems) (system: import nixpkgs {inherit system;});
     eachSystem = f: nixpkgs.lib.genAttrs (import systems) (system: f system pkgsFor.${system});
   in {
-    homeManagerModules.default = self.homeManagerModules.drugtracker2;
-    homeManagerModules.drugtracker2 = (import ./home-manager.nix) niceHaskell;
-
     packages = eachSystem (system: pkgs: let
-      program = pkgs.callPackage ./package.nix {niceHaskell = niceHaskell.outputs.niceHaskell.${system};};
+      program = pkgs.callPackage ./nix/package.nix {niceHaskell = niceHaskell.outputs.niceHaskell.${system};};
     in {
       "{{cookiecutter.binaryName}}" = program;
       default = program;
     });
 
-    formatter = eachSystem (system: pkgs: (treefmt-nix.lib.evalModule pkgs ./treefmt.nix).${system}.config.build.wrapper);
+    formatter = eachSystem (_system: pkgs: (treefmt-nix.lib.evalModule pkgs ./nix/treefmt.nix).config.build.wrapper);
 
     devShells = eachSystem (_system: pkgs: {
       default = pkgs.mkShell {
         packages = let
           ghcPackages = pkgs.haskell.packages.ghc912;
         in [
-          pkgs.pkg-config
-          pkgs.libsodium
-          pkgs.zlib
           ghcPackages.ghc
+          ghcPackages.cabal-install
           ghcPackages.haskell-language-server
+
+          pkgs.pkg-config
+          pkgs.zlib
         ];
         shellHook = ''
           export CABAL_DIR="$XDG_CONFIG_HOME/cabal"
