@@ -9,6 +9,7 @@
   programs.deadnix.enable = true;
   programs.statix.enable = true;
   programs.fourmolu.enable = true;
+  programs.cabal-fmt.enable = true;
 
   settings.formatter = {
     fourmolu = {
@@ -26,7 +27,9 @@
 
     trim-newlines = {
       command = "${lib.getExe pkgs.gnused}";
-      options = lib.strings.splitString " " ''-i -e :a -e /^\n*$/{$d;N;ba -e }'';
+      options =
+        lib.strings.splitString " "
+        '':a; /^\s*$/ { $d; N; ba }'';
       includes = ["*"];
     };
   };
