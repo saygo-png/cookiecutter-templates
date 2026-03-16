@@ -1,5 +1,5 @@
 cabal-version: 2.4
-name:          {{cookiecutter.binaryName}}
+name:          {{cookiecutter.binary_name}}
 version:       0
 build-type:    Simple
 author:        saygo-png
@@ -33,8 +33,7 @@ common common-options
     OverloadedStrings
     PartialTypeSignatures
 
-
-executable {{cookiecutter.binaryName}}
+executable {{cookiecutter.binary_name}}
   import:         common-options
   hs-source-dirs: src
   main-is:        Main.hs

@@ -29,7 +29,7 @@
     packages = eachSystem (system: pkgs: let
       program = pkgs.callPackage ./nix/package.nix {niceHaskell = niceHaskell.outputs.niceHaskell.${system};};
     in {
-      "{{cookiecutter.binaryName}}" = program;
+      "{{cookiecutter.binary_name}}" = program;
       default = program;
     });
 

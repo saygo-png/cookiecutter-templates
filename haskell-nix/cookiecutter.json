@@ -1,6 +1,6 @@
 {
-  "project_slug": "myproject",
-  "binaryName": "foo",
+  "project_name": "myProject",
+  "binary_name": "foobar",
   "_copy_without_render": [
     "*.hs"
   ]
