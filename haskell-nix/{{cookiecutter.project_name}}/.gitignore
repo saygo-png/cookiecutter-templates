@@ -4,6 +4,7 @@ result
 .devenv
 
 ### Haskell ###
+tags
 dist
 dist-*
 cabal-dev
