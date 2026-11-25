@@ -1,13 +1,13 @@
-cabal-version: 2.4
-name:          {{cookiecutter.binary_name}}
-version:       0
-build-type:    Simple
-author:        saygo-png
-maintainer:    saygo-png <saygo.mail@proton.me>
+cabal-version: 3.0
+name: {{cookiecutter.binary_name}}
+version: 0
+build-type: Simple
+author: saygo-png
+maintainer: saygo-png <saygo.mail@proton.me>
 
 common common-options
-  build-depends:      base
-  default-language:   GHC2024
+  build-depends: relude
+  default-language: GHC2024
   ghc-options:
     -Weverything
     -Wno-all-missed-specialisations
@@ -20,9 +20,6 @@ common common-options
     -Wno-safe
     -Wno-unsafe
     -Wno-unticked-promoted-constructors
-    -rtsopts
-    -threaded
-    -with-rtsopts=-N
 
   default-extensions:
     DuplicateRecordFields
@@ -33,7 +30,55 @@ common common-options
     OverloadedStrings
     PartialTypeSignatures
 
-executable {{cookiecutter.binary_name}}
-  import:         common-options
+common executable-options
+  ghc-options:
+    -threaded
+    -rtsopts
+
+library
+  import: common-options
   hs-source-dirs: src
-  main-is:        Main.hs
+  -- cabal-gild: discover src
+  exposed-modules: Lib
+
+executable {{cookiecutter.binary_name}}
+  import: common-options, executable-options
+  hs-source-dirs: app
+  main-is: Main.hs
+  -- cabal-gild: discover app --exclude=app/Main.hs
+  other-modules:
+  build-depends: {{cookiecutter.binary_name}}
+
+test-suite tests
+  import: common-options, executable-options
+  type: exitcode-stdio-1.0
+  hs-source-dirs: test
+  main-is: Main.hs
+  -- cabal-gild: discover test --exclude=test/Main.hs
+  other-modules: LibTest
+  ghc-options:
+    -Wno-prepositive-qualified-module
+    -Wno-unused-packages
+
+  build-depends:
+    base,
+    {{cookiecutter.binary_name}},
+    tasty,
+    tasty-discover,
+    tasty-hunit,
+    tasty-quickcheck,
+
+benchmark bench
+  import: common-options, executable-options
+  type: exitcode-stdio-1.0
+  hs-source-dirs: bench
+  main-is: Main.hs
+  -- cabal-gild: discover bench --exclude=bench/Main.hs
+  other-modules:
+  ghc-options:
+    -fproc-alignment=64
+    -with-rtsopts=-A32m
+
+  build-depends:
+    {{cookiecutter.binary_name}},
+    tasty-bench,
